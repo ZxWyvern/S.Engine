@@ -1,0 +1,14 @@
+build/
+external/SDL/build/
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+.vscode/
+.idea/
+*.user
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
