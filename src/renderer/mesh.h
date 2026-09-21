@@ -1,8 +1,11 @@
 #pragma once
 
+#include "scene/mesh_handle.h"
+
 #include <glad/glad.h>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
+#include <unordered_map>
 #include <vector>
 
 namespace Renderer {
@@ -42,6 +45,25 @@ private:
     GLuint m_vbo{0};
     GLuint m_ebo{0};
     size_t m_indexCount{0};
+};
+
+// GPU mesh store — owns all Mesh objects and maps neutral handles.
+// Renderer owns this; Scene only ever sees MeshHandle.
+class MeshRegistry {
+public:
+    MeshRegistry() = default;
+    ~MeshRegistry() = default;
+
+    Scene::MeshHandle CreateCube(float size = 1.0f);
+    Scene::MeshHandle CreatePlane(float width, float depth);
+    Scene::MeshHandle AddMesh(Mesh mesh);
+
+    const Mesh* Get(Scene::MeshHandle handle) const;
+    void Clear();
+
+private:
+    uint32_t m_nextId{1};
+    std::unordered_map<uint32_t, Mesh> m_meshes;
 };
 
 } // namespace Renderer

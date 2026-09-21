@@ -1,8 +1,9 @@
 #pragma once
 
-#include "renderer/mesh.h"
+#include "scene/mesh_handle.h"
 #include "scene/transform.h"
 
+#include <glm/vec3.hpp>
 #include <memory>
 #include <string>
 #include <vector>
@@ -21,30 +22,30 @@ public:
     Transform& GetTransform() { return m_transform; }
     const Transform& GetTransform() const { return m_transform; }
 
-    void SetMesh(std::shared_ptr<Renderer::Mesh> mesh) { m_mesh = std::move(mesh); }
-    Renderer::Mesh* GetMesh() const { return m_mesh.get(); }
-    bool HasMesh() const { return m_mesh != nullptr; }
+    void SetMeshHandle(MeshHandle handle) { m_meshHandle = handle; }
+    MeshHandle GetMeshHandle() const { return m_meshHandle; }
+    bool HasMesh() const { return m_meshHandle.IsValid(); }
 
     void SetColor(const glm::vec3& color) { m_color = color; }
     const glm::vec3& GetColor() const { return m_color; }
 
-    // Hierarchy
     void AddChild(std::unique_ptr<SceneNode> child);
     const std::vector<std::unique_ptr<SceneNode>>& GetChildren() const { return m_children; }
     SceneNode* GetParent() const { return m_parent; }
 
-    // Collision helpers per-node AABB in local object space
     void SetExtents(const glm::vec3& extents) { m_extents = extents; }
     const glm::vec3& GetExtents() const { return m_extents; }
     void SetIsStatic(bool isStatic) { m_isStatic = isStatic; }
     bool IsStatic() const { return m_isStatic; }
 
     glm::mat4 GetWorldMatrix() const;
+    glm::vec3 GetWorldPosition() const;
+    void SetWorldPosition(const glm::vec3& worldPosition);
 
 private:
     std::string m_name;
     Transform m_transform;
-    std::shared_ptr<Renderer::Mesh> m_mesh;
+    MeshHandle m_meshHandle{kInvalidMeshHandle};
     glm::vec3 m_color{1.0f};
     glm::vec3 m_extents{0.5f};
     bool m_isStatic{false};

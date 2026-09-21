@@ -21,6 +21,7 @@ bool Renderer::Initialize() {
     if (!LoadPsxShader()) {
         return false;
     }
+    m_nodeBuffer.reserve(64);
     m_isInitialized = true;
     Platform::Logger::Info("Renderer initialized");
     return true;
@@ -28,13 +29,14 @@ bool Renderer::Initialize() {
 
 void Renderer::Shutdown() {
     m_psxShader.reset();
+    m_meshRegistry.Clear();
+    m_nodeBuffer.clear();
     m_isInitialized = false;
     m_uniformsCached = false;
 }
 
 bool Renderer::LoadPsxShader() {
     m_psxShader = std::make_unique<Shader>();
-    // Try two locations: executable dir and source shaders/
     const char* paths[][2] = {
         {"shaders/psx.vert", "shaders/psx.frag"},
         {"../shaders/psx.vert", "../shaders/psx.frag"},
@@ -64,8 +66,6 @@ void Renderer::SetupPsxUniforms(const glm::mat4& view, const glm::mat4& projecti
     m_psxShader->SetMat4("uView", glm::value_ptr(view));
     m_psxShader->SetMat4("uProjection", glm::value_ptr(projection));
 
-    // These do not change per-frame if config is static — cache after first upload
-    // but re-upload is cheap; we guard with m_uniformsCached to honor RULES §4
     if (!m_uniformsCached) {
         m_psxShader->SetFloat("uSnapScale", kSnapScale);
         m_psxShader->SetFloat("uColorLevels", kColorLevels);
@@ -93,10 +93,14 @@ void Renderer::RenderScene(const Scene::Scene& scene) {
     }
     m_psxShader->Bind();
 
-    const auto nodes = scene.GetAllNodes();
-    for (const Scene::SceneNode* node : nodes) {
+    scene.GetAllNodesInto(m_nodeBuffer);
+    for (const Scene::SceneNode* node : m_nodeBuffer) {
         // TODO(debt): batch draw calls — current linear draw call per node; fine for v1 but will not scale — plan instancing/batch
         if (!node->HasMesh()) {
+            continue;
+        }
+        const Mesh* mesh = m_meshRegistry.Get(node->GetMeshHandle());
+        if (mesh == nullptr) {
             continue;
         }
         const glm::mat4 model = node->GetWorldMatrix();
@@ -104,8 +108,7 @@ void Renderer::RenderScene(const Scene::Scene& scene) {
         const glm::vec3 col = node->GetColor();
         m_psxShader->SetVec3("uObjectColor", glm::value_ptr(col));
 
-        // No allocation here — Mesh::Draw binds and draws directly
-        node->GetMesh()->Draw();
+        mesh->Draw();
     }
 }
 

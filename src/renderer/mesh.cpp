@@ -73,19 +73,15 @@ void Mesh::SetVertices(const std::vector<Vertex>& vertices, const std::vector<un
                  indices.data(),
                  GL_STATIC_DRAW);
 
-    // position  location 0
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                           reinterpret_cast<void*>(offsetof(Vertex, position)));
-    // normal location 1
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                           reinterpret_cast<void*>(offsetof(Vertex, normal)));
-    // texCoord location 2
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                           reinterpret_cast<void*>(offsetof(Vertex, texCoord)));
-    // color location 3
     glEnableVertexAttribArray(3);
     glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                           reinterpret_cast<void*>(offsetof(Vertex, color)));
@@ -113,7 +109,6 @@ void Mesh::Draw() const {
 Mesh Mesh::CreateCube(const float size) {
     const float h = size * 0.5f;
 
-    // 6 faces * 4 vertices = 24 vertices (distinct normals/texcoords per face)
     std::vector<Vertex> vertices;
     vertices.reserve(24);
 
@@ -124,7 +119,6 @@ Mesh Mesh::CreateCube(const float size) {
         vertices.push_back({v3, n, {0.0f, 1.0f}, col});
     };
 
-    // Colors per face slightly varied for retro flat look
     pushFace({0, 0, 1},  {-h,-h, h}, { h,-h, h}, { h, h, h}, {-h, h, h}, {1.0f, 0.2f, 0.2f});
     pushFace({0, 0,-1},  { h,-h,-h}, {-h,-h,-h}, {-h, h,-h}, { h, h,-h}, {0.2f, 1.0f, 0.2f});
     pushFace({-1, 0, 0}, {-h,-h,-h}, {-h,-h, h}, {-h, h, h}, {-h, h,-h}, {0.2f, 0.2f, 1.0f});
@@ -160,6 +154,37 @@ Mesh Mesh::CreatePlane(const float width, const float depth) {
     Mesh mesh;
     mesh.SetVertices(vertices, indices);
     return mesh;
+}
+
+Scene::MeshHandle MeshRegistry::AddMesh(Mesh mesh) {
+    const uint32_t id = m_nextId++;
+    m_meshes.emplace(id, std::move(mesh));
+    return Scene::MeshHandle{id};
+}
+
+Scene::MeshHandle MeshRegistry::CreateCube(const float size) {
+    Mesh m = Mesh::CreateCube(size);
+    return AddMesh(std::move(m));
+}
+
+Scene::MeshHandle MeshRegistry::CreatePlane(const float width, const float depth) {
+    Mesh m = Mesh::CreatePlane(width, depth);
+    return AddMesh(std::move(m));
+}
+
+const Mesh* MeshRegistry::Get(const Scene::MeshHandle handle) const {
+    if (!handle.IsValid()) {
+        return nullptr;
+    }
+    const auto it = m_meshes.find(handle.id);
+    if (it == m_meshes.end()) {
+        return nullptr;
+    }
+    return &it->second;
+}
+
+void MeshRegistry::Clear() {
+    m_meshes.clear();
 }
 
 } // namespace Renderer

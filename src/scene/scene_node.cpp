@@ -1,5 +1,7 @@
 #include "scene/scene_node.h"
 
+#include <glm/gtc/matrix_transform.hpp>
+
 namespace Scene {
 
 SceneNode::SceneNode(std::string name)
@@ -17,6 +19,20 @@ glm::mat4 SceneNode::GetWorldMatrix() const {
         return local;
     }
     return m_parent->GetWorldMatrix() * local;
+}
+
+glm::vec3 SceneNode::GetWorldPosition() const {
+    const glm::mat4 world = GetWorldMatrix();
+    return glm::vec3(world[3]);
+}
+
+void SceneNode::SetWorldPosition(const glm::vec3& worldPosition) {
+    if (m_parent == nullptr) {
+        m_transform.SetPosition(worldPosition);
+    } else {
+        const glm::vec3 parentWorld = m_parent->GetWorldPosition();
+        m_transform.SetPosition(worldPosition - parentWorld);
+    }
 }
 
 } // namespace Scene

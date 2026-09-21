@@ -1,15 +1,17 @@
 #pragma once
 
+#include "scene/mesh_handle.h"
 #include "scene/scene.h"
-#include "renderer/mesh.h"
 
-#include <memory>
+namespace Renderer {
+class MeshRegistry;
+}
 
 namespace Gameplay {
 
 class Level {
 public:
-    explicit Level(Scene::Scene& scene);
+    Level(Scene::Scene& scene, Renderer::MeshRegistry& meshRegistry);
 
     void Build();
     Scene::SceneNode* GetPlayerNode() const { return m_playerNode; }
@@ -18,7 +20,6 @@ public:
     bool CheckWinCondition() const;
     bool CheckVoidCondition() const;
 
-    // Named constants for level geometry
     static constexpr float kFloorSize = 20.0f;
     static constexpr float kWallHeight = 3.0f;
     static constexpr float kWallThickness = 0.5f;
@@ -27,8 +28,9 @@ public:
 
 private:
     Scene::Scene& m_scene;
-    std::shared_ptr<Renderer::Mesh> m_cubeMesh;
-    std::shared_ptr<Renderer::Mesh> m_planeMesh;
+    Renderer::MeshRegistry& m_meshRegistry;
+    Scene::MeshHandle m_cubeHandle{Scene::kInvalidMeshHandle};
+    Scene::MeshHandle m_planeHandle{Scene::kInvalidMeshHandle};
 
     Scene::SceneNode* m_playerNode{nullptr};
     Scene::SceneNode* m_goalNode{nullptr};

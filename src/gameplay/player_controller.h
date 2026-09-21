@@ -27,11 +27,9 @@ public:
     void SetVerticalVelocity(float velocity) { m_verticalVelocity = velocity; }
     void AddVerticalVelocity(float delta) { m_verticalVelocity += delta; }
 
-    // Named constants instead of magic numbers per RULES 2.2
     static constexpr float kDefaultMoveSpeed = 4.0f;
     static constexpr float kDefaultJumpSpeed = 6.0f;
     static constexpr float kDefaultGravity = 18.0f;
-    static constexpr float kGroundHeight = 0.5f;
     static constexpr float kVoidResetY = -10.0f;
 
 private:
