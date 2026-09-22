@@ -19,12 +19,12 @@
 ## Features (Fase D)
 
 - **Vertex Snapping** `floor(pos.xy*160)/160` after `w` divide — `src/renderer/renderer.h:36 kSnapScale`
-- **Affine Mapping** `noperspective` UV — screen-space linear, PS1 warp
+- **Affine-ready UV plumbing** — `noperspective` varyings wired for future textured materials; no `texture()` sampled yet so the warp is not observable on current flat-colored geometry (see `shaders/psx.vert`)
 - **Color Quantize + Dithering** `uColorLevels=32` + Bayer 4×4 `shaders/psx.frag`
 - **Short Linear Fog** `uFogNear=8 / uFogFar=22`
 - **Flat Lambertian** per-vertex, no PBR
 
-Plus: 320×240 `RenderTarget` with nearest-neighbor blit, third-person camera with `exp(-k*dt)` smoothing, AABB collision + gravity, win/void conditions.
+Plus: 320×240 `RenderTarget` with nearest-neighbor blit, third-person follow camera owned by `Game` (`src/gameplay/game.h`), AABB world-space collision with contact normals (ground/wall/ceiling), win/void conditions.
 
 ## Quick Start
 
@@ -67,15 +67,18 @@ cmake --build "S.Engine/build" -j4
 
 ```
 Game Layer  →  Engine Core (Application, IGame, InputState)  →  Systems  →  Platform
-               gameplay/game.h  core/i_game.h                  renderer/    platform/
-                                                        scene/    window.h
-                                                      collision   input.h, logger.h
+               gameplay/game.h  core/i_game.h                  scene/       foundation/logger.h
+                   ↑               (Initialize/Update/Shutdown)  renderer/    platform/
+                   |                                              mesh       window.h
+                   +—— Level owns SceneNode(MeshHandle)                      input.h
 ```
 
-- **Layer rule** `docs/RULES.md:2.1` — `Systems → Platform only`, `Renderer/Scene` never include `gameplay/`. Decoupling via `Core::IGame` + `Core::InputState` (`src/core/i_game.h`, `input_state.h`) — `Application` owns `Scene`, `Game` is injected in `src/main.cpp`.
+- **Layer rule** `docs/RULES.md:2.1` — `Systems → Platform/Foundation only`, `Renderer/Scene` never include `gameplay/`. `Scene` stores `MeshHandle` (`src/scene/mesh_handle.h`), `Renderer::MeshRegistry` owns GPU `Mesh` objects. Decoupling via `Core::IGame` (`src/core/i_game.h` — `Initialize(scene, MeshRegistry)/Update/Shutdown`) — `Application` owns `Scene` + `Renderer`, `Game` is injected in `src/main.cpp` and owns follow-camera.
 - **Naming** `RULES.md:3.1` — `PascalCase` class/method, `m_` members, `kPascal` constants, `snake_case` files.
-- **RAII** — VAO/VBO/Shader `Destroy()` in dtor, `unique_ptr` ownership, no `new/delete`, no alloc in hot loop (`Scene::GetAllNodesInto()` + `reserve()`).
-- **Error handling** — shader/file failures log + safe fallback, `assert` only for invariants.
+- **RAII** — VAO/VBO/Shader `Destroy()` in dtor, `unique_ptr` ownership, no `new/delete`.
+- **Hot loop** — per-frame traversals reuse `GetAllNodesInto(buffer)` with `reserve()`; `CollisionSystem` reuses `m_contacts`/`m_nodeBuffer` (`src/gameplay/collision_system.h`). No fresh `GetAllNodes()` allocation in frame loops. Run `rg "GetAllNodes\(\)" src` to audit.
+- **Error handling** — shader/file failures log + safe fallback via `Foundation::Logger`, `assert` only for invariants.
+- **Diagnostics** — single `src/foundation/logger` canonical logger; no duplicate `core/logger` or `platform/logger`.
 
 ## Project Structure
 
@@ -84,14 +87,16 @@ S.Engine/
 ├── CMakeLists.txt          # SDL options OFF, glad static, glm interface, copy shaders
 ├── external/{SDL,glm,glad} # vendored (SDL built as shared)
 ├── src/
-│   ├── platform/{window,input,logger}
-│   ├── core/{application,i_game,input_state,logger,time,engine_config}
-│   ├── renderer/{renderer,render_target,shader,mesh}
-│   ├── scene/{scene,scene_node,transform,camera}
-│   ├── gameplay/{game,level,player_controller,collision_system}
+│   ├── foundation/logger
+│   ├── platform/{window,input}
+│   ├── core/{application,i_game,input_state,time,engine_config}
+│   ├── renderer/{renderer,render_target,shader,mesh,mesh_registry}
+│   ├── scene/{scene,scene_node(mesh_handle),transform,camera}
+│   ├── gameplay/{game,level,player_controller,collision_system(contact)}
 │   └── main.cpp            # injects Gameplay::Game via IGame
-├── shaders/{psx.vert,psx.frag}
+├── shaders/{psx.vert,psx.frag}  # affine-ready plumbing (no texture sampled yet)
 ├── assets/{models,textures} # reserved
+├── tests/{input,transform,scene,collision}_tests.cpp
 └── build/                  # out-of-source (ignored)
 ```
 
@@ -105,7 +110,17 @@ S.Engine/
 | `uFogColor` | 0.08,0.08,0.10 | Fog solid color |
 | `uLightDir` | -0.4,-1,-0.3 | Flat Lambert dir |
 
-All uniforms named — no magic numbers in shaders (`RULES.md:2.2`).
+All uniforms named — no magic numbers in shaders (`RULES.md:2.2`). Vertex attr `aTexCoord`/varying `vTexCoord` plumbing is affine-ready; no `texture()` call yet — do not claim completed affine texturing.
+
+## Testing
+
+```bash
+cmake -S . -B build
+cmake --build build -j4
+ctest --test-dir build --output-on-failure   # or ./build/engine-tests.exe
+```
+
+Coverage: `tests/input_tests.cpp` (press/hold/release + jump/reset), `transform_tests.cpp` (local/scale/forward), `scene_tests.cpp` (parent-child world 10+2→12, SetWorldPosition, traversal buffer reuse), `collision_tests.cpp` (AABB, world-space child, ground/wall/ceiling, elevated floor without global ground, void). `src/platform/input` exposes `TestSetPrevious/TestSetCurrent/TestSnapshotUpdate` for owned-snapshot tests. Collision note: AABBs remain axis-aligned; rotated boxes not supported (documented in `src/gameplay/collision_system.h`).
 
 ## Roadmap
 

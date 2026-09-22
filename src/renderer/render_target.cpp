@@ -1,6 +1,6 @@
 #include "renderer/render_target.h"
 
-#include "platform/logger.h"
+#include "foundation/logger.h"
 
 namespace Renderer {
 
@@ -35,7 +35,7 @@ GLuint CompileShaderStage(GLenum type, const char* source) {
     if (ok == 0) {
         char log[512];
         glGetShaderInfoLog(sh, 512, nullptr, log);
-        Platform::Logger::Error(std::string("Blit shader compile failed: ") + log);
+        Foundation::Logger::Error(std::string("Blit shader compile failed: ") + log);
         glDeleteShader(sh);
         return 0;
     }
@@ -100,7 +100,7 @@ bool RenderTarget::Initialize(const int internalWidth, const int internalHeight)
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_depthRenderbuffer);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        Platform::Logger::Error("RenderTarget framebuffer incomplete");
+        Foundation::Logger::Error("RenderTarget framebuffer incomplete");
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         Destroy();
         return false;
@@ -147,12 +147,12 @@ bool RenderTarget::Initialize(const int internalWidth, const int internalHeight)
     if (linked == 0) {
         char log[512];
         glGetProgramInfoLog(m_blitProgram, 512, nullptr, log);
-        Platform::Logger::Error(std::string("Blit program link failed: ") + log);
+        Foundation::Logger::Error(std::string("Blit program link failed: ") + log);
         Destroy();
         return false;
     }
 
-    Platform::Logger::Info("RenderTarget initialized " + std::to_string(m_width) + "x" + std::to_string(m_height));
+    Foundation::Logger::Info("RenderTarget initialized " + std::to_string(m_width) + "x" + std::to_string(m_height));
     return true;
 }
 

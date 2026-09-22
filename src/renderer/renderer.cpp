@@ -1,6 +1,6 @@
 #include "renderer/renderer.h"
 
-#include "platform/logger.h"
+#include "foundation/logger.h"
 #include "renderer/mesh.h"
 #include "renderer/shader.h"
 #include "scene/scene.h"
@@ -23,7 +23,7 @@ bool Renderer::Initialize() {
     }
     m_nodeBuffer.reserve(64);
     m_isInitialized = true;
-    Platform::Logger::Info("Renderer initialized");
+    Foundation::Logger::Info("Renderer initialized");
     return true;
 }
 
@@ -46,12 +46,12 @@ bool Renderer::LoadPsxShader() {
     for (auto& p : paths) {
         if (m_psxShader->LoadFromFiles(p[0], p[1])) {
             loaded = true;
-            Platform::Logger::Info(std::string("Loaded PSX shaders from ") + p[0]);
+            Foundation::Logger::Info(std::string("Loaded PSX shaders from ") + p[0]);
             break;
         }
     }
     if (!loaded) {
-        Platform::Logger::Error("Failed to load PSX shaders from any known path");
+        Foundation::Logger::Error("Failed to load PSX shaders from any known path");
         m_psxShader.reset();
         return false;
     }

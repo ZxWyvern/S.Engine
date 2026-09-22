@@ -1,6 +1,6 @@
 #include "gameplay/level.h"
 
-#include "core/logger.h"
+#include "foundation/logger.h"
 #include "renderer/mesh.h"
 #include "scene/scene_node.h"
 
@@ -86,7 +86,7 @@ void Level::Build() {
     cam.SetPerspective(60.0f, static_cast<float>(320) / 240.0f, 0.1f, 100.0f);
     cam.LookAt(glm::vec3(0.0f, 4.0f, 8.0f), glm::vec3(0.0f, 0.5f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    Core::Logger::Info("Level built: " + std::to_string(m_scene.GetAllNodes().size()) + " nodes");
+    Foundation::Logger::Info("Level built: " + std::to_string(m_scene.GetAllNodes().size()) + " nodes");
 }
 
 bool Level::CheckWinCondition() const {

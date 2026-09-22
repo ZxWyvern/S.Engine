@@ -1,6 +1,6 @@
 #include "renderer/shader.h"
 
-#include "platform/logger.h"
+#include "foundation/logger.h"
 
 #include <fstream>
 #include <sstream>
@@ -35,7 +35,7 @@ void Shader::Destroy() {
 std::string Shader::ReadFile(const std::string& path) {
     std::ifstream file(path);
     if (!file.is_open()) {
-        Platform::Logger::Error("Failed to open shader file: " + path);
+        Foundation::Logger::Error("Failed to open shader file: " + path);
         return "";
     }
     std::stringstream buffer;
@@ -50,7 +50,7 @@ GLuint Shader::CompileShader(const GLenum type, const std::string& source) {
     glCompileShader(shader);
     std::string log;
     if (!CheckCompileStatus(shader, log)) {
-        Platform::Logger::Error("Shader compile failed: " + log);
+        Foundation::Logger::Error("Shader compile failed: " + log);
         glDeleteShader(shader);
         return 0;
     }
@@ -87,7 +87,7 @@ bool Shader::LoadFromFiles(const std::string& vertexPath, const std::string& fra
     const std::string vertSource = ReadFile(vertexPath);
     const std::string fragSource = ReadFile(fragmentPath);
     if (vertSource.empty() || fragSource.empty()) {
-        Platform::Logger::Error("Shader source empty, aborting load");
+        Foundation::Logger::Error("Shader source empty, aborting load");
         return false;
     }
     return LoadFromSource(vertSource, fragSource);
@@ -116,7 +116,7 @@ bool Shader::LoadFromSource(const std::string& vertexSource, const std::string& 
 
     std::string log;
     if (!CheckLinkStatus(m_programId, log)) {
-        Platform::Logger::Error("Shader link failed: " + log);
+        Foundation::Logger::Error("Shader link failed: " + log);
         glDeleteProgram(m_programId);
         m_programId = 0;
         return false;

@@ -6,12 +6,16 @@
 #include "gameplay/level.h"
 #include "gameplay/player_controller.h"
 
+#include <glm/vec3.hpp>
 #include <memory>
 #include <vector>
 
 namespace Scene {
 class Scene;
 class SceneNode;
+}
+namespace Renderer {
+class MeshRegistry;
 }
 
 namespace Gameplay {
@@ -21,18 +25,16 @@ public:
     Game() = default;
     ~Game() override = default;
 
-    bool Initialize(Scene::Scene& scene, Renderer::MeshRegistry& meshRegistry);
-    // IGame interface — uses injected dependencies set during Initialize
-    bool Initialize(Scene::Scene& scene) override;
+    bool Initialize(Scene::Scene& scene, Renderer::MeshRegistry& meshRegistry) override;
     void Update(float deltaTime, const Core::InputState& input, Scene::Camera& camera) override;
-    bool HasWon() const override { return m_hasWon; }
-    glm::vec3 GetPlayerPosition() const override;
-    void Reset(Scene::Scene& scene) override;
-    bool IsVoid() const;
-    void SetMeshRegistry(Renderer::MeshRegistry* meshRegistry) { m_meshRegistry = meshRegistry; }
+    void Shutdown() override;
 
 private:
     void BuildLevel(Scene::Scene& scene);
+    void Reset(Scene::Scene& scene);
+    void UpdateCamera(float deltaTime, Scene::Camera& camera);
+    bool IsVoid() const;
+    glm::vec3 GetPlayerWorldPosition() const;
 
     std::unique_ptr<Level> m_level;
     std::unique_ptr<PlayerController> m_playerController;
@@ -41,6 +43,7 @@ private:
     std::vector<Scene::SceneNode*> m_nodeBuffer;
     bool m_hasWon{false};
     Scene::Scene* m_scenePtr{nullptr};
+    glm::vec3 m_cameraOffset{0.0f, 4.0f, 7.0f};
 };
 
 } // namespace Gameplay

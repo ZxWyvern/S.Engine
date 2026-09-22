@@ -1,6 +1,6 @@
 #include "gameplay/game.h"
 
-#include "core/logger.h"
+#include "foundation/logger.h"
 #include "renderer/mesh.h"
 #include "scene/camera.h"
 #include "scene/scene.h"
@@ -18,14 +18,6 @@ bool Game::Initialize(Scene::Scene& scene, Renderer::MeshRegistry& meshRegistry)
     return true;
 }
 
-bool Game::Initialize(Scene::Scene& scene) {
-    if (m_meshRegistry == nullptr) {
-        Core::Logger::Error("Game::Initialize called without MeshRegistry — call Initialize(scene, meshRegistry)");
-        return false;
-    }
-    return Initialize(scene, *m_meshRegistry);
-}
-
 void Game::BuildLevel(Scene::Scene& scene) {
     m_level = std::make_unique<Level>(scene, *m_meshRegistry);
     m_level->Build();
@@ -38,7 +30,7 @@ void Game::BuildLevel(Scene::Scene& scene) {
 void Game::Reset(Scene::Scene& scene) {
     BuildLevel(scene);
     m_hasWon = false;
-    Core::Logger::Info("Level reset");
+    Foundation::Logger::Info("Level reset");
 }
 
 bool Game::IsVoid() const {
@@ -46,9 +38,30 @@ bool Game::IsVoid() const {
     return m_level->CheckVoidCondition();
 }
 
-glm::vec3 Game::GetPlayerPosition() const {
+glm::vec3 Game::GetPlayerWorldPosition() const {
     if (m_level == nullptr || m_level->GetPlayerNode() == nullptr) return glm::vec3(0.0f);
     return m_level->GetPlayerNode()->GetWorldPosition();
+}
+
+void Game::UpdateCamera(const float deltaTime, Scene::Camera& camera) {
+    if (m_scenePtr == nullptr) return;
+    const glm::vec3 targetPos = GetPlayerWorldPosition();
+    const glm::vec3 desired = targetPos + m_cameraOffset;
+    const glm::vec3 current = camera.GetPosition();
+    constexpr float kCameraLerpSpeed = 4.0f;
+    const float t = 1.0f - std::exp(-kCameraLerpSpeed * deltaTime);
+    const glm::vec3 smoothed = glm::mix(current, desired, t);
+    camera.SetPosition(smoothed);
+    camera.SetTarget(targetPos + glm::vec3(0.0f, 0.5f, 0.0f));
+    camera.SetUp(glm::vec3(0.0f, 1.0f, 0.0f));
+}
+
+void Game::Shutdown() {
+    m_playerController.reset();
+    m_collisionSystem.reset();
+    m_level.reset();
+    m_scenePtr = nullptr;
+    m_meshRegistry = nullptr;
 }
 
 void Game::Update(const float deltaTime, const Core::InputState& input, Scene::Camera& camera) {
@@ -60,11 +73,13 @@ void Game::Update(const float deltaTime, const Core::InputState& input, Scene::C
         if (input.reset) {
             Reset(*m_scenePtr);
         }
+        UpdateCamera(deltaTime, camera);
         return;
     }
 
     if (input.reset) {
         Reset(*m_scenePtr);
+        UpdateCamera(deltaTime, camera);
         return;
     }
 
@@ -81,7 +96,6 @@ void Game::Update(const float deltaTime, const Core::InputState& input, Scene::C
             if (c.normal.y < -0.5f) hitCeiling = true;
         }
 
-        // Fallback feet check for elevated floors where penetration may be near zero
         if (!grounded) {
             const glm::vec3 pos = playerNode->GetWorldPosition();
             const glm::vec3 ext = m_collisionSystem->GetPlayerExtents();
@@ -113,13 +127,15 @@ void Game::Update(const float deltaTime, const Core::InputState& input, Scene::C
 
     if (m_level->CheckWinCondition()) {
         m_hasWon = true;
-        Core::Logger::Info("WIN! Touch goal — press R to reset, ESC to quit");
+        Foundation::Logger::Info("WIN! Touch goal — press R to reset, ESC to quit");
     }
 
     if (m_level->CheckVoidCondition()) {
-        Core::Logger::Warning("Player fell into void — resetting");
+        Foundation::Logger::Warning("Player fell into void — resetting");
         Reset(*m_scenePtr);
     }
+
+    UpdateCamera(deltaTime, camera);
 }
 
 } // namespace Gameplay

@@ -1,8 +1,8 @@
-#include "core/logger.h"
+#include "foundation/logger.h"
 
 #include <iostream>
 
-namespace Core {
+namespace Foundation {
 
 const char* Logger::LevelToString(const LogLevel level) {
     switch (level) {
@@ -34,4 +34,4 @@ void Logger::Error(const std::string& message) {
     Log(LogLevel::Error, message);
 }
 
-} // namespace Core
+} // namespace Foundation

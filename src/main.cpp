@@ -1,7 +1,7 @@
 #include <SDL.h>
 
 #include "core/application.h"
-#include "core/logger.h"
+#include "foundation/logger.h"
 #include "gameplay/game.h"
 
 int main(int argc, char* argv[]) {
@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
     app.SetGame(std::move(game));
 
     if (!app.Initialize()) {
-        Core::Logger::Error("Failed to initialize application");
+        Foundation::Logger::Error("Failed to initialize application");
         return 1;
     }
     app.Run();

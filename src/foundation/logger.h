@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace Core {
+namespace Foundation {
 
 enum class LogLevel {
     Info,
@@ -21,4 +21,4 @@ private:
     static const char* LevelToString(LogLevel level);
 };
 
-} // namespace Core
+} // namespace Foundation

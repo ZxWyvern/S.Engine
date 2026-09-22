@@ -1,7 +1,6 @@
 #version 330 core
 
 in vec3 vColor;
-in vec3 vNormal;
 noperspective in vec2 vTexCoord;
 in float vDepth;
 in float vLighting;

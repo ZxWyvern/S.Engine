@@ -28,10 +28,9 @@ target_include_directories(glm INTERFACE external/glm)
 
 set(SOURCES
     src/main.cpp
+    src/foundation/logger.cpp
     src/platform/window.cpp
     src/platform/input.cpp
-    src/platform/logger.cpp
-    src/core/logger.cpp
     src/core/time.cpp
     src/core/application.cpp
     src/renderer/shader.cpp
@@ -74,6 +73,43 @@ if(MSVC)
     target_compile_options(psx-engine PRIVATE /W4)
 else()
     target_compile_options(psx-engine PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+enable_testing()
+
+add_executable(engine-tests
+    tests/test_main.cpp
+    tests/input_tests.cpp
+    tests/transform_tests.cpp
+    tests/scene_tests.cpp
+    tests/collision_tests.cpp
+    src/foundation/logger.cpp
+    src/platform/input.cpp
+    src/scene/transform.cpp
+    src/scene/camera.cpp
+    src/scene/scene_node.cpp
+    src/scene/scene.cpp
+    src/gameplay/collision_system.cpp
+)
+
+target_include_directories(engine-tests PRIVATE
+    src
+    external/glad/include
+    external/glm
+)
+
+target_link_libraries(engine-tests PRIVATE
+    glad
+    glm
+    SDL2
+)
+
+add_test(NAME engine-tests COMMAND engine-tests)
+if(WIN32)
+    target_link_libraries(engine-tests PRIVATE opengl32)
+else()
+    find_package(OpenGL REQUIRED)
+    target_link_libraries(engine-tests PRIVATE OpenGL::GL)
 endif()
 
 # Copy shaders to build directory next to executable

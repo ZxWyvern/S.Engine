@@ -1,7 +1,7 @@
 #include "core/application.h"
 
 #include "core/engine_config.h"
-#include "core/logger.h"
+#include "foundation/logger.h"
 #include "platform/input.h"
 #include "platform/window.h"
 #include "renderer/render_target.h"
@@ -30,7 +30,7 @@ bool Application::Initialize() {
         EngineConfig::kWindowTitle);
 
     if (!m_window->IsValid()) {
-        Logger::Error("Window initialization failed");
+        Foundation::Logger::Error("Window initialization failed");
         return false;
     }
 
@@ -40,30 +40,29 @@ bool Application::Initialize() {
     m_renderTarget = std::make_unique<Renderer::RenderTarget>();
     if (!m_renderTarget->Initialize(EngineConfig::kInternalResolutionWidth,
                                     EngineConfig::kInternalResolutionHeight)) {
-        Logger::Error("RenderTarget initialization failed");
+        Foundation::Logger::Error("RenderTarget initialization failed");
         return false;
     }
 
     m_renderer = std::make_unique<Renderer::Renderer>();
     if (!m_renderer->Initialize()) {
-        Logger::Error("Renderer initialization failed");
+        Foundation::Logger::Error("Renderer initialization failed");
         return false;
     }
 
     m_scene = std::make_unique<Scene::Scene>();
 
-    // Game is injected from Game layer (main.cpp); Core never includes Gameplay headers
     if (m_game != nullptr) {
-        if (!m_game->Initialize(*m_scene)) {
-            Logger::Error("IGame initialization failed");
+        if (!m_game->Initialize(*m_scene, m_renderer->GetMeshRegistry())) {
+            Foundation::Logger::Error("IGame initialization failed");
             return false;
         }
     } else {
-        Logger::Warning("No IGame injected — running with empty scene");
+        Foundation::Logger::Warning("No IGame injected — running with empty scene");
     }
 
     m_isInitialized = true;
-    Logger::Info("Application initialized (WASD move, Space jump, R reset, ESC quit)");
+    Foundation::Logger::Info("Application initialized (WASD move, Space jump, R reset, ESC quit)");
     return true;
 }
 
@@ -73,7 +72,7 @@ void Application::SetGame(std::unique_ptr<IGame> game) {
 
 void Application::Run() {
     if (!m_isInitialized) {
-        Logger::Error("Run called before Initialize");
+        Foundation::Logger::Error("Run called before Initialize");
         return;
     }
 
@@ -112,25 +111,6 @@ void Application::Update(const float deltaTime) {
         auto& camera = m_scene->GetCamera();
         m_game->Update(deltaTime, inputState, camera);
     }
-
-    UpdateCamera(deltaTime);
-}
-
-void Application::UpdateCamera(const float deltaTime) {
-    if (m_scene == nullptr) return;
-    glm::vec3 targetPos(0.0f);
-    if (m_game != nullptr) {
-        targetPos = m_game->GetPlayerPosition();
-    }
-    auto& camera = m_scene->GetCamera();
-    const glm::vec3 desired = targetPos + m_cameraOffset;
-    const glm::vec3 current = camera.GetPosition();
-    constexpr float kCameraLerpSpeed = 4.0f;
-    const float t = 1.0f - std::exp(-kCameraLerpSpeed * deltaTime);
-    const glm::vec3 smoothed = glm::mix(current, desired, t);
-    camera.SetPosition(smoothed);
-    camera.SetTarget(targetPos + glm::vec3(0.0f, 0.5f, 0.0f));
-    camera.SetUp(glm::vec3(0.0f, 1.0f, 0.0f));
 }
 
 void Application::Render() {
