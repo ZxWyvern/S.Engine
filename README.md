@@ -142,7 +142,7 @@ PRs must be warning-free, no leak (ASan), behavior observed, layer intact, no ba
 
 ## License
 
-MIT — add `LICENSE` if publishing.
+MIT
 
 ## Acknowledgments
 
