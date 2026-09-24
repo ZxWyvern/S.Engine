@@ -1,6 +1,5 @@
 # S.Engine — PSX Retro Engine
-
-> Minimal C++17 3D engine with authentic PS1 look: 320×240, vertex jitter, affine warp, dithering, short fog. Playable v1 — no scripting, no full ECS, no third-party physics.
+Minimal C++17 3D engine with authentic PS1 look: 320×240, vertex jitter, affine warp, dithering, short fog. Playable v1 — no scripting, no full ECS, no third-party physics.
 
 ![C++17](https://img.shields.io/badge/C%2B%2B-17-blue)
 ![SDL2](https://img.shields.io/badge/SDL2-2.30-green)
